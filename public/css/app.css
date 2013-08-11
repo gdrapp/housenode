@@ -1,0 +1,32 @@
+/* app css stylesheet */
+
+body {
+  padding-top: 65px; /* 50px for navbar, plus 15px for some whitespace below navbar */
+  padding-bottom: 10px; /* 10px here + 5px at bottom of last row = 15px whitespace at bottom */
+}
+
+.navbar-inverse .navbar-brand {
+  color: #ffffff;
+}
+
+.grid {
+    border: 1px solid rgb(212,212,212);
+    width: 90%; 
+    margin-bottom: 20px
+}
+
+.cameras .row > div {
+    padding: 5px;
+}
+
+.cameras .row .leftcolumn > img {
+    display: block;
+    margin: auto;
+    margin-right: 0;
+}
+
+.cameras .row .rightcolumn > img {
+    display: block;
+    margin: auto;
+    margin-left: 0;
+}

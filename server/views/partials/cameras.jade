@@ -1,0 +1,30 @@
+.cameras
+  .row
+    .col-lg-6.leftcolumn
+      img.img-responsive(src="/proxy/familycam")
+
+    .col-lg-6.rightcolumn
+      //img.img-responsive(src="/proxy/nurserycam")
+
+  .row
+    .col-lg-6.leftcolumn
+      img.img-responsive(src="/proxy/basementcam")
+
+    .col-lg-6.rightcolumn
+      img.img-responsive(src="/proxy/garagecam")
+
+script(type='text/javascript').
+  $(document).ready(function() {
+    resizeImages();
+  });
+
+  $(window).resize(function(){
+    resizeImages();
+  });
+
+  function resizeImages() {
+    var winWidth = $ (window).innerWidth();
+    var winHeight = $ (window).innerHeight();
+    $('div.cameras img').css({
+      'height': (winHeight-100)/2});
+  }

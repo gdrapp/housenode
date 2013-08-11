@@ -1,0 +1,17 @@
+{
+  "name": "housenode",
+  "description": "HouseNode Home Manager",
+  "version": "0.0.1",
+  "author": "Greg Rapp <gdrapp@gmail.com>",
+  "private": true,
+  "engines": { "node": "0.10.x" },
+  "dependencies": {
+    "express": "3.3.x",
+    "socket.io": "0.9.x",
+    "jade": "0.31.x",
+    "redis": "0.8.x",
+    "forever": "0.10.x"
+  },
+  "devDependencies": {
+  }
+}
