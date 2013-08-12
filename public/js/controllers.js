@@ -17,9 +17,12 @@ angular.module('houseNode.controllers', []).
                                         {field:'value', displayName:'Status'},
                                         {field:'time', displayName:'Last Change', cellTemplate:'<div class="ngCellText colt{{$index}}">{{row.getProperty(col.field) | date:\'short\'}}</div>'}
                                       ],
+                          aggregateTemplate:'<div ng-click="row.toggleExpand()" ng-style="rowStyle(row)" class="ngAggregate"><span class="ngAggregateText">{{row.label CUSTOM_FILTERS}}</span><div class="{{row.aggClass()}}"></div></div>',
                           plugins: [new ngGridFlexibleHeightPlugin({minHeight: 200})],
                           showFilter: true,
+                          groups: ['location'],
                           showGroupPanel: true,
+                          groupsCollapsedByDefault: false,
                           sortInfo: {fields:['location','name'], directions:['asc','asc']}
                         };
 
