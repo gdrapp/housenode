@@ -1,0 +1,17 @@
+{
+  "name": "housenode",
+  "version": "0.1.0",
+  "main": "public/css/app.css",
+  "ignore": [
+    ".jshintrc",
+    "**/*.txt"
+  ],
+  "dependencies": {
+    "angular": "1.0.x",
+    "angular-socket-io": "0.1.x",
+    "ng-grid": "2.0.x"
+  },
+  "devDependencies": {
+  },
+  "private": true.
+}
