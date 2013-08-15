@@ -4,7 +4,7 @@
       img.img-responsive(src="/proxy/familycam")
 
     .col-lg-6.rightcolumn
-      //img.img-responsive(src="/proxy/nurserycam")
+      img.img-responsive(src="/proxy/nurserycam")
 
   .row
     .col-lg-6.leftcolumn
@@ -22,9 +22,16 @@ script(type='text/javascript').
     resizeImages();
   });
 
+  $('iframe').load(function() {
+    this.style.height = this.contentWindow.document.body.scrollHeight + 'px';
+    this.style.width = this.contentWindow.document.body.scrollWidth + 'px';
+  });
+
   function resizeImages() {
     var winWidth = $ (window).innerWidth();
     var winHeight = $ (window).innerHeight();
     $('div.cameras img').css({
+      'height': (winHeight-100)/2});
+    $('img').css({
       'height': (winHeight-100)/2});
   }
