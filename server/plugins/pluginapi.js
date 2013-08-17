@@ -8,14 +8,6 @@ redisClient.on("error", function (err) {
     console.log("REDIS ERROR: " + err);
 });
 
-/*exports.publishValue = function(pluginName, pluginInstance, valueId, value) {
-  var message = { value: value,
-                  time: new Date().getTime() };
-  message = JSON.stringify(message);
-  redisClient.publish("/plugin/"+pluginName+"/"+pluginInstance+"/"+valueId, message);
-};*/
-
-
 function PluginAPI(pluginName, pluginInstance) {
   this.pluginName = pluginName;
   this.pluginInstance = pluginInstance;
@@ -31,8 +23,16 @@ PluginAPI.prototype.publishValue = function(valueId, value) {
 }
 
 PluginAPI.prototype.onCommand = function(command, cb) {
-  redisSubscriber.subscribe(this.channelBase+"/command/"+command, function (channel, message) {
-    cb(message);
+  redisSubscriber.psubscribe(this.channelBase+"/*/"+command);
+  redisSubscriber.on("pmessage", function(pattern, channel, message) {
+    var target = channel.split('/');
+    if (target.length === 5) {
+      target = target.slice(3,-1);
+      var args = JSON.parse(message);
+      cb(target, args);
+    } else {
+      console.warn("Invalid plugin command message channel: " + channel);
+    }
   });
 }
 
