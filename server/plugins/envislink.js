@@ -5,14 +5,7 @@ exports.info = {
 	description: "Plugin for Envisalink 2DS/3DS security system TCP/IP module",
 	configSchema: [{name:'host', 			type:'string', 	description:'Module IP address', 	mandatory:true},
 								 {name:'port', 			type:'integer', description:'Module TCP port', 		mandatory:true},
-								 {name:'password', 	type:'string', 	description:'Module password', 		mandatory:true}],
-	commands: [{name:'arm', 					args:[{name:'partition', 	type:'integer'},
-																					{name:'code', 			type:'integer'}]},
-						 {name:'armZeroDelay', 	args:[{name:'partition',	type:'integer'},
-						 															{name:'code',				type:'integer'}]},
-						 {name:'disarm', 				args:[{name:'partition',	type:'integer'},
-						 															{name:'code',				type:'integer'}]}
-						 ]
+								 {name:'password', 	type:'string', 	description:'Module password', 		mandatory:true}]
 };
 
 exports.plugin = EnvisalinkPlugin;
@@ -24,15 +17,17 @@ function EnvisalinkPlugin () {
 	var instance,
 			pluginApi,
 			host,
-	    port,
-	    password;
+			port,
+			password,
+			code;
 
 	var init = function (instance, config) {
 		instance = instance;
-		pluginApi = new PluginAPI(exports.info.name, instance);
-		host = config.host;
-		port = config.port;
-		password = config.password;
+		pluginApi = new PluginAPI(exports.info.name, instance),
+		host = config.host,
+		port = config.port,
+		password = config.password,
+		code = config.code;
 
 		console.log("Connecting to Envisalink module at %s:%d", host, port);
 		var client = net.createConnection(port, host, function() {
@@ -84,16 +79,24 @@ function EnvisalinkPlugin () {
 		  }, 5000);
 		});
 
-		pluginApi.onCommand('arm', function (args) {
-
+		pluginApi.onCommand('arm', function (target, args) {
+			if (target && target.length === 2 && target.chartAt(0) === 'P') {
+				var partition = target.charAt(1);
+				console.log("Received arm command for partition " + partition);
+				sendData(client, createCommand("030", partition));
+			} else {
+				console.warn("Invalid Envisalink arm command target: %s", target)
+			}
 		});
 
-		pluginApi.onCommand('armZeroDelay', function (args) {
-
-		});
-
-		pluginApi.onCommand('disarm', function (args) {
-
+		pluginApi.onCommand('disarm', function (target, args) {
+			if (target && target.length === 2 && target.chartAt(0) === 'P') {
+				var partition = target.charAt(1);
+				console.log("Received disarm command for partition " + partition);
+				sendData(client, createCommand("040", partition+(args.code || code)));
+			} else {
+				console.warn("Invalid Envisalink arm command target: %s", target)
+			}
 		});
 	};
 
@@ -155,6 +158,8 @@ function EnvisalinkPlugin () {
 			pluginApi.publishValue("P"+payload, "exitDelay");
 		} else if (cmd === "657") { // Entry delay in progress
 			pluginApi.publishValue("P"+payload, "entryDelay");
+		} else if (cmd === "900") { // Code required
+
 		}
 	};
 

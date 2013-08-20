@@ -30,7 +30,6 @@ exports.devices = function (minDate, cb) {
       replies.forEach(function (reply, index) {
         var id = reply.id;
         if (reply.time >= minDate ) {
-          //filteredDeviceList[id] = deviceList[id];
           var device = deviceList[id];
           for (var attrname in reply) {
             device[attrname] = reply[attrname];

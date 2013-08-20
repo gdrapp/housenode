@@ -28,7 +28,10 @@ PluginAPI.prototype.onCommand = function(command, cb) {
     var target = channel.split('/');
     if (target.length === 5) {
       target = target.slice(3,-1);
-      var args = JSON.parse(message);
+      var args = {};
+      if (message && message.length > 0) {
+        args = JSON.parse(message);        
+      }
       cb(target, args);
     } else {
       console.warn("Invalid plugin command message channel: " + channel);

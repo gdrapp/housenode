@@ -11,8 +11,14 @@ angular.module('houseNode', [
 
   // 3rd party dependencies
   'btford.socket-io'
-]).
-config(function ($routeProvider, $locationProvider) {
+]);
+
+angular.module('houseNode.controllers', []);
+angular.module('houseNode.directives', []);
+angular.module('houseNode.filters', []);
+angular.module('houseNode.services', []);
+
+angular.module('houseNode').config(function ($routeProvider, $locationProvider) {
   $routeProvider.
     when('/', {
       templateUrl: 'partials/home',
