@@ -8,6 +8,8 @@ var config = require('./config'),
     api = require('./server/routes/api'),
     http = require('http'),
     path = require('path'),
+    redis = require('redis'),
+    redisClient = redis.createClient(config.redisServer.port, config.redisServer.host, config.redisServer.options),
     pluginMgr = require('./server/pluginmgr'),
     deviceMgr = require('./server/devicemgr');
 
@@ -97,6 +99,11 @@ socketio.sockets.on('connection', function(socket) {
     socket.emit('plugin:updateAll', {
       plugins: pluginInfo
     });
+  });
+
+  socket.on('system:event', function(data) {
+    console.log("Publishing event " + data.event);
+    redisClient.publish(data.event, data.message);
   });
 });
 

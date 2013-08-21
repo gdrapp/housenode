@@ -80,7 +80,7 @@ function EnvisalinkPlugin () {
 		});
 
 		pluginApi.onCommand('arm', function (target, args) {
-			if (target && target.length === 2 && target.chartAt(0) === 'P') {
+			if (target && typeof target === 'string' && target.length === 2 && target.charAt(0) === 'P') {
 				var partition = target.charAt(1);
 				console.log("Received arm command for partition " + partition);
 				sendData(client, createCommand("030", partition));
@@ -90,7 +90,7 @@ function EnvisalinkPlugin () {
 		});
 
 		pluginApi.onCommand('disarm', function (target, args) {
-			if (target && target.length === 2 && target.chartAt(0) === 'P') {
+			if (target && typeof target === 'string' && target.length === 2 && target.charAt(0) === 'P') {
 				var partition = target.charAt(1);
 				console.log("Received disarm command for partition " + partition);
 				sendData(client, createCommand("040", partition+(args.code || code)));
@@ -139,15 +139,46 @@ function EnvisalinkPlugin () {
 			pluginApi.publishValue("Z"+payload, "open");
 		} else if (cmd === "610") { // Zone restored
 			pluginApi.publishValue("Z"+payload, "restored");
+		} else if (cmd === "621") { // Fire key alarm 
+			pluginApi.publishValue("PANEL", "fireKey");
+		} else if (cmd === "622") { // Fire key alarm restore 
+			pluginApi.publishValue("PANEL", "fireKeyRestore");
+		} else if (cmd === "623") { // Auxillary key alarm 
+			pluginApi.publishValue("PANEL", "auxillaryKey");
+		} else if (cmd === "624") { // Auxillary key alarm restore 
+			pluginApi.publishValue("PANEL", "auxillaryKeyRestore");
+		} else if (cmd === "625") { // Panic key alarm 
+			pluginApi.publishValue("PANEL", "panicKey");
+		} else if (cmd === "626") { // Panic key alarm restore 
+			pluginApi.publishValue("PANEL", "panicKeyRestore");
 		} else if (cmd === "650") { // Partition ready
 			pluginApi.publishValue("P"+payload, "ready");
 		} else if (cmd === "651") { // Partition not ready
 			pluginApi.publishValue("P"+payload, "notReady");
 		} else if (cmd === "652") { // Partition armed
-			var partition = payload.slice(0,1),
-					mode = payload.slice(1);
+			if (payload.length === 2) {
+				var partition = payload.slice(0,1),
+						mode = payload.slice(1);
 
-			pluginApi.publishValue("P"+partition, "armed");
+				switch (mode)
+				{
+				case 0:
+					mode = "Away";
+					break;
+				case 1:
+					mode = "Stay";
+					break;
+				case 2:
+					mode = "ZeroEntryAway";
+					break;
+				case 3:
+					mode = "ZeroEntryStay";
+					break;
+				default:
+					mode = "";
+				}
+				pluginApi.publishValue("P"+partition, "armed"+mode);				
+			}
 		} else if (cmd === "653") { // Partition ready - force arming enabled
 			pluginApi.publishValue("P"+payload, "readyForceArming");
 		} else if (cmd === "654") { // Partition in alarm
@@ -158,6 +189,56 @@ function EnvisalinkPlugin () {
 			pluginApi.publishValue("P"+payload, "exitDelay");
 		} else if (cmd === "657") { // Entry delay in progress
 			pluginApi.publishValue("P"+payload, "entryDelay");
+		} else if (cmd === "658") { // Keypad lockout
+			pluginApi.publishValue("P"+payload, "keypadLockout");
+		} else if (cmd === "659") { // Partition failed to arm
+			pluginApi.publishValue("P"+payload, "failedToArm");
+		} else if (cmd === "660") { // PGM Output is in Progress 
+			pluginApi.publishValue("P"+payload, "pgmOutputInProgress");
+		} else if (cmd === "663") { // Chime enabled 
+			pluginApi.publishValue("P"+payload, "chimeEnabled");
+		} else if (cmd === "664") { // Chime disabled 
+			pluginApi.publishValue("P"+payload, "chimeDisabld");
+		} else if (cmd === "670") { // Invalid access code 
+			pluginApi.publishValue("P"+payload, "invalidAccessCode");
+		} else if (cmd === "671") { // Function not available 
+			pluginApi.publishValue("P"+payload, "functionNotAvailable");
+		} else if (cmd === "672") { // Failure to arm 
+			pluginApi.publishValue("P"+payload, "failureToArm");
+		} else if (cmd === "673") { // Partition is busy
+			pluginApi.publishValue("P"+payload, "partitionBusy");
+		} else if (cmd === "674") { // System auto arming in progress 
+			pluginApi.publishValue("P"+payload, "systemAutoArming");
+		} else if (cmd === "700") { // User closing 
+
+		} else if (cmd === "701") { // Special closing 
+			pluginApi.publishValue("P"+payload, "");
+		} else if (cmd === "702") { // Partial closing 
+			pluginApi.publishValue("P"+payload, "partialClosing");
+		} else if (cmd === "750") { // User opening 
+
+		} else if (cmd === "751") { // Special opening 
+			pluginApi.publishValue("P"+payload, "specialOpening");
+		} else if (cmd === "800") { // Panel battery trouble
+			pluginApi.publishValue("PANEL", "batteryTrouble");
+		} else if (cmd === "801") { // Panel battery trouble restore
+			pluginApi.publishValue("PANEL", "batteryTroubleRestore");
+		} else if (cmd === "802") { // Panel AC trouble
+			pluginApi.publishValue("PANEL", "acTrouble");
+		} else if (cmd === "803") { // Panel  AC trouble restore
+			pluginApi.publishValue("PANEL", "acTroubleRestore");
+		} else if (cmd === "806") { // System bell trouble 
+			pluginApi.publishValue("PANEL", "bellTrouble");
+		} else if (cmd === "807") { // System bell trouble restore 
+			pluginApi.publishValue("PANEL", "bellTroubleRestore");
+		} else if (cmd === "814") { // FTC trouble 
+			pluginApi.publishValue("PANEL", "ftcTrouble");
+		} else if (cmd === "816") { // Buffer near full 
+			pluginApi.publishValue("PANEL", "bufferNearFull");
+		} else if (cmd === "829") { // General system tamper 
+			pluginApi.publishValue("PANEL", "generalTamper");
+		} else if (cmd === "830") { // General system tamper restore 
+			pluginApi.publishValue("PANEL", "generalTamperRestore");
 		} else if (cmd === "900") { // Code required
 
 		}

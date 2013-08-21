@@ -12,11 +12,13 @@ angular.module('houseNode.controllers').controller('DevicesController', function
                         groups: ['location'],
                         showGroupPanel: true,
                         groupsCollapsedByDefault: false,
+                        enableRowSelection: false,
                         sortInfo: {fields:['location','name'], directions:['asc','asc']}
                       };
 
   $scope.emitEvent = function(event) {
-    socket.emit('system:event', {event:event});
+    console.log("Emitting event: "+ event);
+    socket.emit('system:event', {event:event, message:{}});
   }
 
   socket.on('device:updateAll', function (data) {

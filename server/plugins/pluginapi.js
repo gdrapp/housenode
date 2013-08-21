@@ -23,18 +23,21 @@ PluginAPI.prototype.publishValue = function(valueId, value) {
 }
 
 PluginAPI.prototype.onCommand = function(command, cb) {
-  redisSubscriber.psubscribe(this.channelBase+"/*/"+command);
+  var commandPattern = this.channelBase+"/*/"+command;
+  redisSubscriber.psubscribe(commandPattern);
   redisSubscriber.on("pmessage", function(pattern, channel, message) {
-    var target = channel.split('/');
-    if (target.length === 5) {
-      target = target.slice(3,-1);
-      var args = {};
-      if (message && message.length > 0) {
-        args = JSON.parse(message);        
+    if (pattern === commandPattern) {
+      if (channel.charAt(0) === '/') {
+        // Get rid of the leading slash
+        channel = channel.slice(1);
       }
-      cb(target, args);
-    } else {
-      console.warn("Invalid plugin command message channel: " + channel);
+      var target = channel.split('/');
+      if (target.length === 5) {
+        target = target.slice(3,-1).join('/');
+        cb(target, message);
+      } else {
+        console.warn("Invalid plugin command message channel: " + channel);
+      }      
     }
   });
 }
