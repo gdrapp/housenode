@@ -11,13 +11,14 @@ html(ng-app="houseNode")
   body
     .navbar.navbar-inverse.navbar-fixed-top(bs-navbar)
       .container
-        button.navbar-toggle(type='button', data-toggle='collapse', data-target='.nav-collapse')
-          span.icon-bar
-          span.icon-bar
-          span.icon-bar
-        a.navbar-brand(href='about') HouseNode
-        .nav-collapse.collapse
-          ul.nav.navbar-nav.pull-right
+        .navbar-header
+          button.navbar-toggle(type='button', data-toggle='collapse', data-target='.nav-collapse')
+            span.icon-bar
+            span.icon-bar
+            span.icon-bar
+          a.navbar-brand(href='about') HouseNode
+        .collapse.navbar-collapse
+          ul.nav.navbar-nav
             li(data-match-route="/")
               a(href='') Home
             li(data-match-route="/devices")
