@@ -19,8 +19,7 @@ angular.module('houseNode.directives').directive('hnDeviceactions', function() {
           ]
         } else if (type === 'securityzone') {
           scope.actions = [
-            { name: 'Arm', event: source + '/arm' },
-            { name: 'Bypass', event: source + '/bypass' },
+            { name: 'Bypass', event: source + '/bypasszone' }
           ]
         }
 

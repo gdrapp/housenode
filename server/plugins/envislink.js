@@ -16,6 +16,8 @@ function EnvisalinkPlugin () {
 
 	var instance,
 			pluginApi,
+			tcpClient,
+			moduleCallbacks = new Array(),
 			host,
 			port,
 			password,
@@ -29,26 +31,42 @@ function EnvisalinkPlugin () {
 		password = config.password,
 		code = config.code;
 
-		console.log("Connecting to Envisalink module at %s:%d", host, port);
-		var client = net.createConnection(port, host, function() {
-			console.log("Connected to Envisalink module at %s:%d", host, port);
-		});
-
-		createListeners(client);
+		createCommandListeners();
+		connectToModule();
 	};
 
 	var destroy = function () {
 
 	};
 
-	function createListeners(client) {
+	function connectToModule() {
+		console.log("Connecting to Envisalink module at %s:%d", host, port);
+		tcpClient = net.createConnection(port, host);
+
+		createNetListeners();
+	}
+
+	function createNetListeners() {
 		var dataBuffer = '';
 
-		client.on('connect', function () {
-
+		tcpClient.on('connect', function () {
+			console.log("Connected to Envisalink module at %s:%d", host, port);
 		});
 
-		client.on('data', function (data) {
+		tcpClient.on('close', function (had_error) {
+			var reconnectDelaySecs = 10;
+			console.log("Connection closed from Envisalink module at %s:%d, reconnecting in %d seconds", host, port, reconnectDelaySecs);
+
+			setTimeout(function () {
+				connectToModule();
+			}, reconnectDelaySecs * 1000);
+		});
+
+		tcpClient.on('error', function () {
+			console.log("Error connecting to Envisalink module at %s:%d", host, port);
+		});
+
+		tcpClient.on('data', function (data) {
 			data = data.toString();
 
 			// Split incoming data on CRLF
@@ -62,28 +80,26 @@ function EnvisalinkPlugin () {
 			    
 			    // Remove the checksum since we know it's good
 			    line = line.substring(0,line.length-2);
+			    
+			    var data = { cmd:line.substring(0,3), payload:line.substring(3) };
 
-		      processData(client, line);	    		
+			    if (moduleCallbacks.length > 0) {
+			    	moduleCallbacks.shift()(data);
+			    }
+		      processData(data);	    		
 	    	} else {
 	    		console.warn("Received bad data from Envisalink: %s", line);
 	    	}
 	    });
 		});
+	};
 
-		client.on('end', function () {
-		  console.log("Disconnected from Envisalink");
-
-		  setTimeout(function () {
-		  	console.log("Attemping to reinitialize Envisalink plugin");
-			  exports.plugin.init();
-		  }, 5000);
-		});
-
+	function createCommandListeners() {
 		pluginApi.onCommand('arm', function (target, args) {
 			if (target && typeof target === 'string' && target.length === 2 && target.charAt(0) === 'P') {
 				var partition = target.charAt(1);
 				console.log("Received arm command for partition " + partition);
-				sendData(client, createCommand("030", partition));
+				sendData(createCommand("030", partition));
 			} else {
 				console.warn("Invalid Envisalink arm command target: %s", target)
 			}
@@ -93,35 +109,57 @@ function EnvisalinkPlugin () {
 			if (target && typeof target === 'string' && target.length === 2 && target.charAt(0) === 'P') {
 				var partition = target.charAt(1);
 				console.log("Received disarm command for partition " + partition);
-				sendData(client, createCommand("040", partition+(args.code || code)));
+				sendData(createCommand("040", partition+(args.code || code)));
 			} else {
 				console.warn("Invalid Envisalink arm command target: %s", target)
 			}
 		});
-	};
+
+		pluginApi.onCommand('bypasszone', function (target, args) {
+			if (target && typeof target === 'string' && target.length === 4 && target.charAt(0) === 'Z') {
+				// Drop the first zero in the zone (001 becomes 01)
+				var zone = target.slice(2);
+				var partition = 1;
+				console.log("Received bypass command for zone " + zone);
+				sendData(createCommand("071", partition+"*1"), function (data) {
+					if (data.cmd === "500" && data.payload === "071") {
+						setTimeout(function () {
+							sendData(createCommand("071", partition+zone), function (data) {
+								if (data.cmd === "500" && data.payload === "071") {
+									sendData(createCommand("071", partition+"#"));
+								}
+							});
+						}, 2000);						
+					}
+				});
+			} else {
+				console.warn("Invalid Envisalink bypass command target: %s", target)
+			}
+		});
+	}
 
 	// Handle incoming data from Envisalink
-	function processData (socket, data) {
-		var cmd = data.substring(0,3),
-				payload = data.substring(3);
+	function processData (data) {
+		var cmd = data.cmd, //substring(0,3),
+				payload = data.payload; //substring(3);
 
 	  if (cmd === "505") {
 	  	if (payload === "0") {
 	  		console.log("Envisalink login failed");
-	  		socket.end();
+	  		tcpClient.end();
 	  	}
 	  	else if (payload === "1") {
 	  		console.log("Envisalink login successful");
-	  		sendData(socket, createCommand("001", ""));
+	  		sendData(createCommand("001", ""));
 	  	} 
 	  	else if (payload === "2") {
 	  		console.log("Envisalink login timed out");
-	  		socket.end();
+	  		tcpClient.end();
 	  	} 
 	  	else if (payload === "3") {
 	  		console.log("Envisalink login password request");	  		
 				var toSend = createCommand("005", password);
-				sendData(socket, toSend);
+				sendData(toSend);
 	  	}
 		} else if (cmd === "601") { // Zone alarm
 			pluginApi.publishValue("Z"+payload.slice(1), "alarm");
@@ -160,23 +198,18 @@ function EnvisalinkPlugin () {
 				var partition = payload.slice(0,1),
 						mode = payload.slice(1);
 
-				switch (mode)
-				{
-				case 0:
+				if (mode === "0") {
 					mode = "Away";
-					break;
-				case 1:
-					mode = "Stay";
-					break;
-				case 2:
+				} else if (mode === "1") {
+					mode = "Stay";					
+				} else if (mode === "2") {
 					mode = "ZeroEntryAway";
-					break;
-				case 3:
+				} else if (mode === "3") {
 					mode = "ZeroEntryStay";
-					break;
-				default:
+				} else {
 					mode = "";
 				}
+
 				pluginApi.publishValue("P"+partition, "armed"+mode);				
 			}
 		} else if (cmd === "653") { // Partition ready - force arming enabled
@@ -244,9 +277,12 @@ function EnvisalinkPlugin () {
 		}
 	};
 
-	function sendData (socket, data) {
+	function sendData (data, callback) {
+		if (callback && typeof callback === 'function') {
+			moduleCallbacks.push(callback);
+		}
 		console.log("Sending %s", data);
-		socket.write(data+"\r\n");		  		  		
+		tcpClient.write(data+"\r\n");		  		
 	};
 
 	// Build command to send to Envisalink
