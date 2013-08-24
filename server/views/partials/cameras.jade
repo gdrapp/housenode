@@ -13,6 +13,15 @@
     .col-lg-6.rightcolumn
       img.img-responsive(src="/proxy/garagecam")
 
+.modal.fade(id='cameraModal')
+    .modal-dialog
+        .modal-content
+          .modal-body(id='cameraModalBody')
+            img.img-responsive
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') Close
+
+
 script(type='text/javascript').
   $(document).ready(function() {
     resizeImages();
@@ -33,3 +42,35 @@ script(type='text/javascript').
     $('div.cameras img').css({
       'height': (winHeight-100)/2});
   }
+
+  $(".cameras img").click(function() {
+    var imgId = $(this);
+    var parentId = $(this).parent();
+
+    window.stop();
+    document.execCommand("Stop", false);
+
+    $('#cameraModalBody > img').attr('src', $(this).attr('src') + '?' + (new Date()).getTime() );
+    $('#cameraModal').modal({});
+
+    $('.cameras .row img').each(function () {
+      $(this).hide();
+    });
+
+    $('#cameraModal').on('hidden.bs.modal', function () {
+      window.stop();
+      document.execCommand("Stop", false);
+
+      $('.cameras .row img').each(function () {
+        var src = $(this).attr('src');
+        var qmark = src.indexOf('?');
+        if (qmark >= 0) {
+          src = src.slice(0, qmark);
+        }
+        $(this).attr('src', src + '?' + (new Date()).getTime() );
+        $(this).show();
+      });
+    });
+  });
+
+

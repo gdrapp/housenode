@@ -19,14 +19,16 @@ body {
     padding: 5px;
 }
 
-.cameras .row .leftcolumn > img {
+.cameras .row img {
     display: block;
     margin: auto;
+    cursor: pointer;
+}
+
+.cameras .row .leftcolumn > img {
     margin-right: 0;
 }
 
 .cameras .row .rightcolumn > img {
-    display: block;
-    margin: auto;
     margin-left: 0;
 }

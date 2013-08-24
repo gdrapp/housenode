@@ -4,7 +4,7 @@ angular.module('houseNode.controllers').controller('DevicesController', function
                                       {field:'location', displayName:'Location'},
                                       {field:'value', displayName:'Status', cellTemplate:'<div class="ngCellText colt{{$index}}">{{row.getProperty(col.field) | titleCase}}</div>'},
                                       {field:'time', displayName:'Last Change', cellTemplate:'<div class="ngCellText colt{{$index}}">{{row.getProperty(col.field) | date:\'short\'}}</div>'},
-                                      {displayName:'Action', cellTemplate:'<div class="ngCellText colt{{$index}}"><hn-deviceactions type="{{row.entity.type}}" source="{{row.entity.source}}"></hn-deviceactions></div>'}
+                                      {displayName:'Action', sortable:false, cellTemplate:'<div class="ngCellText colt{{$index}}"><hn-deviceactions type="{{row.entity.type}}" source="{{row.entity.source}}"></hn-deviceactions></div>'}
                                     ],
                         aggregateTemplate:'<div ng-click="row.toggleExpand()" ng-style="rowStyle(row)" class="ngAggregate"><span class="ngAggregateText">{{row.label CUSTOM_FILTERS}}</span><div class="{{row.aggClass()}}"></div></div>',
                         plugins: [new ngGridFlexibleHeightPlugin({minHeight: 200})],
