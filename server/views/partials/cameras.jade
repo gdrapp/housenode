@@ -31,19 +31,14 @@ script(type='text/javascript').
     resizeImages();
   });
 
-  $('iframe').load(function() {
-    this.style.height = this.contentWindow.document.body.scrollHeight + 'px';
-    this.style.width = this.contentWindow.document.body.scrollWidth + 'px';
-  });
-
   function resizeImages() {
     var winWidth = $ (window).innerWidth();
     var winHeight = $ (window).innerHeight();
-    $('div.cameras img').css({
+    $('.cameras img').css({
       'height': (winHeight-100)/2});
   }
 
-  $(".cameras img").click(function() {
+  $('.cameras img').click(function() {
     var imgId = $(this);
     var parentId = $(this).parent();
 
