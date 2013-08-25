@@ -61,8 +61,8 @@ var handleMessage = function (channel, message) {
       redisClient.publish("/device/"+id+"/update", message);
 
       if (typeof that.socketio !== 'undefined') {
-        that.socketio.sockets.emit('device:update', {
-          device: message
+        that.socketio.sockets.emit('devices:emit', {
+          devices: message
         });
       } else {
         console.log("SOCKETIO IS UNDEFINED");

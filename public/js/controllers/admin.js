@@ -10,9 +10,9 @@ angular.module('houseNode.controllers').controller('AdminController', function (
                                 plugins: [new ngGridFlexibleHeightPlugin({minHeight: 100})]
                               };
 
-  socket.on('plugin:updateAll', function (data) {
+  socket.on('plugins:emit', function (data) {
     $scope.plugins =  data.plugins;
   });
 
-  socket.emit('plugin:getAll');
+  socket.emit('plugins:get');
 });

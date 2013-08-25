@@ -17,24 +17,33 @@ angular.module('houseNode.controllers').controller('DevicesController', function
                       };
 
   $scope.emitEvent = function(event) {
-    console.log("Emitting event: "+ event);
+    console.log("Emitting event: " + event);
     socket.emit('system:event', {event:event, message:{}});
   }
 
-  socket.on('device:updateAll', function (data) {
-    $scope.devices =  data.devices;
-  });
+  socket.on('devices:emit', function (data) {
+    if (data.isAllDevices) {
+      $scope.devices =  data.devices;      
+    } else {
+      var devices = data.devices;
 
-  socket.on('device:update', function (data) {
-    for (var i=0;i<$scope.devices.length;i++) {
-      if ($scope.devices[i].id === data.device.id) {
-        for (var key in data.device) {
-          $scope.devices[i][key] = data.device[key];
-        }
-        break;          
+      // If devices isn't an array, make it an array
+      if (!Object.prototype.toString.call(devices) !== '[object Array]') {
+        devices = [devices];
+      }
+
+      for (var i=0;i<devices.length;i++) {
+        for (var j=0;j<$scope.devices.length;j++) {
+          if ($scope.devices[j].id === devices[i].id) {
+            for (var key in devices[i]) {
+              $scope.devices[j][key] = devices[i][key];
+            }
+            break;
+          }
+        }      
       }
     }
   });
 
-  socket.emit('device:getAll');
+  socket.emit('devices:get');
 });

@@ -83,20 +83,21 @@ socketio.sockets.on('connection', function(socket) {
   // join a room based on this session ID
   socket.join(socket.handshake.sessionID);
 
-  socket.on('device:getAll', function() {
+  socket.on('devices:get', function() {
     deviceMgr.devices(0, function (devices) {
-      socket.emit('device:updateAll', {
-        devices: devices
+      socket.emit('devices:emit', {
+        devices: devices,
+        isAllDevices: true
       });
     });
   });
 
-  socket.on('plugin:getAll', function() {
+  socket.on('plugins:get', function(data) {
     var pluginInfo = new Array();
     for (var key in pluginMgr.pluginModules) {
       pluginInfo.push(pluginMgr.pluginModules[key].info);
     }
-    socket.emit('plugin:updateAll', {
+    socket.emit('plugins:emit', {
       plugins: pluginInfo
     });
   });
