@@ -283,7 +283,10 @@ function EnvisalinkPlugin () {
 		} else if (cmd === "830") { // General system tamper restore 
 			pluginApi.publishValue("PANEL", "generalTamperRestore");
 		} else if (cmd === "900") { // Code required
-
+			if (code) {
+				var toSend = createCommand("200", code);
+				sendData(toSend);				
+			}
 		}
 	};
 
