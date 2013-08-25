@@ -1,10 +1,10 @@
 angular.module('houseNode.controllers').controller('DevicesController', function ($scope, socket) {
   $scope.gridOptions = {data: 'devices',
-                        columnDefs: [ {field:'name', displayName:'Name'},
-                                      {field:'location', displayName:'Location'},
-                                      {field:'value', displayName:'Status', cellTemplate:'<div class="ngCellText colt{{$index}}">{{row.getProperty(col.field) | titleCase}}</div>'},
-                                      {field:'time', displayName:'Last Change', cellTemplate:'<div class="ngCellText colt{{$index}}">{{row.getProperty(col.field) | date:\'short\'}}</div>'},
-                                      {displayName:'Action', sortable:false, cellTemplate:'<div class="ngCellText colt{{$index}}"><hn-deviceactions type="{{row.entity.type}}" source="{{row.entity.source}}"></hn-deviceactions></div>'}
+                        columnDefs: [ {field:'name', displayName:'Name', width:'20%'},
+                                      {field:'location', displayName:'Location', width:'20%'},
+                                      {field:'value', displayName:'Status', width:'20%', cellTemplate:'<div class="ngCellText colt{{$index}}">{{row.getProperty(col.field) | titleCase}}</div>'},
+                                      {field:'time', displayName:'Last Change', width:'15%', cellTemplate:'<div class="ngCellText colt{{$index}}">{{row.getProperty(col.field) | date:\'short\'}}</div>'},
+                                      {displayName:'Action', width:'25%', sortable:false, cellTemplate:'<div class="ngCellText colt{{$index}}"><hn-deviceactions type="{{row.entity.type}}" source="{{row.entity.source}}"></hn-deviceactions></div>'}
                                     ],
                         aggregateTemplate:'<div ng-click="row.toggleExpand()" ng-style="rowStyle(row)" class="ngAggregate"><span class="ngAggregateText">{{row.label CUSTOM_FILTERS}}</span><div class="{{row.aggClass()}}"></div></div>',
                         plugins: [new ngGridFlexibleHeightPlugin({minHeight: 200})],

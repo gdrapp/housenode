@@ -5,6 +5,8 @@ angular.module('houseNode.controllers').controller('AdminController', function (
                                               {field:'version', displayName:'Version', width:'10%'},
                                               {field:'description', displayName:'Description', width:'50%'}
                                             ],
+                                enableRowSelection: false,
+                                sortInfo: {fields:['name'], directions:['asc']},
                                 plugins: [new ngGridFlexibleHeightPlugin({minHeight: 100})]
                               };
 

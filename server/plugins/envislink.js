@@ -95,11 +95,21 @@ function EnvisalinkPlugin () {
 	};
 
 	function createCommandListeners() {
-		pluginApi.onCommand('arm', function (target, args) {
+		pluginApi.onCommand('armAway', function (target, args) {
 			if (target && typeof target === 'string' && target.length === 2 && target.charAt(0) === 'P') {
 				var partition = target.charAt(1);
-				console.log("Received arm command for partition " + partition);
+				console.log("Received armAway command for partition " + partition);
 				sendData(createCommand("030", partition));
+			} else {
+				console.warn("Invalid Envisalink arm command target: %s", target)
+			}
+		});
+
+		pluginApi.onCommand('armNoEntryDelay', function (target, args) {
+			if (target && typeof target === 'string' && target.length === 2 && target.charAt(0) === 'P') {
+				var partition = target.charAt(1);
+				console.log("Received armNoEntryDelay command for partition " + partition);
+				sendData(createCommand("032", partition));
 			} else {
 				console.warn("Invalid Envisalink arm command target: %s", target)
 			}
