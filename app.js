@@ -10,6 +10,7 @@ var config = require('./config'),
     path = require('path'),
     redis = require('redis'),
     redisClient = redis.createClient(config.redisServer.port, config.redisServer.host, config.redisServer.options),
+    _ = require('underscore'),
     pluginMgr = require('./server/pluginmgr'),
     deviceMgr = require('./server/devicemgr');
 
@@ -82,6 +83,16 @@ app.get('*', routes.index);
 socketio.sockets.on('connection', function(socket) {
   // join a room based on this session ID
   socket.join(socket.handshake.sessionID);
+
+  socket.on('locations:get', function() {
+    deviceMgr.devices(0, function (devices) {
+      var locations = _.uniq(_.pluck(devices, 'location').sort(), true);
+      socket.emit('locations:emit', {
+        locations: locations,
+        isAllLocations: true
+      });
+    });
+  });
 
   socket.on('devices:get', function() {
     deviceMgr.devices(0, function (devices) {
