@@ -85,7 +85,7 @@ socketio.sockets.on('connection', function(socket) {
   socket.join(socket.handshake.sessionID);
 
   socket.on('locations:get', function() {
-    deviceMgr.devices(0, function (devices) {
+    deviceMgr.devices(function (devices) {
       var locations = _.uniq(_.pluck(devices, 'location').sort(), true);
       socket.emit('locations:emit', {
         locations: locations,
@@ -95,7 +95,7 @@ socketio.sockets.on('connection', function(socket) {
   });
 
   socket.on('devices:get', function() {
-    deviceMgr.devices(0, function (devices) {
+    deviceMgr.devices(function (devices) {
       socket.emit('devices:emit', {
         devices: devices,
         isAllDevices: true

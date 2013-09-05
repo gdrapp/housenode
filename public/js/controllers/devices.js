@@ -27,7 +27,7 @@ angular.module('houseNode.controllers').controller('DevicesController', function
     } else {
       var devices = data.devices;
 
-      // If devices isn't an array, make it an array
+      // If devices isn't an array, make it an array so the for loop doesn't freak
       if (!Object.prototype.toString.call(devices) !== '[object Array]') {
         devices = [devices];
       }

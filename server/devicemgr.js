@@ -5,6 +5,8 @@ var config = require('../config'),
     redisSubscriber = redis.createClient(config.redisServer.port, config.redisServer.host, config.redisServer.options),
     that = this;
 
+var devicePrefix = "device:";
+
 exports.init = function (socketio, cb) {
   that.socketio = socketio;
 
@@ -14,13 +16,19 @@ exports.init = function (socketio, cb) {
     handleMessage(channel, message);
   });
 
+  for (var id in devices.devices) {
+    redisClient.sadd("devices", devicePrefix+id);
+    redisClient.hmset(devicePrefix+id, devices.devices[id]);
+    redisClient.hmset(devicePrefix+id, {id: id});
+
+  }
+
   cb();
 };
 
-exports.devices = function (minDate, cb) {
+exports.devices = function (cb) {
   redisClient.smembers("devices", function(err, deviceKeys) {
-    var deviceList = devices.devices,
-        filteredDeviceList = new Array(),
+    var devicesArray = new Array(),
         multi = redisClient.multi();
     
     for (var i=0;i<deviceKeys.length;i++) {
@@ -28,23 +36,15 @@ exports.devices = function (minDate, cb) {
     }
     multi.exec(function (err, replies) {
       replies.forEach(function (reply, index) {
-        var id = reply.id;
-        if (reply.time >= minDate ) {
-          var device = deviceList[id];
-          for (var attrname in reply) {
-            device[attrname] = reply[attrname];
-          }
-          filteredDeviceList.push(device);
-        }
+        devicesArray.push(reply);
       });
 
-      cb(filteredDeviceList);
+      cb(devicesArray);
     });
   });
 };
 
 var handleMessage = function (channel, message) {
-  var devicePrefix = "device:";
 
   for (var id in devices.devices) {
     if (devices.devices[id].source === channel) {
