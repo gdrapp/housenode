@@ -1,8 +1,13 @@
 # HouseNode
 config.json
 devices.json
-
 public/bower_components
+*.pem
+*.der
+*.p12
+*.key
+*.crt
+*.pfx
 
 # Redis
 dump.rdb
