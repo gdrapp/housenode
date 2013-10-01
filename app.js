@@ -4,11 +4,14 @@
 
 var config = require('./config'),
     express = require('express'),
+    db = require('./server/model/db'),
+    mongoose = require('mongoose'),
     routes = require('./server/routes'),
     api = require('./server/routes/api'),
     http = require('http'),
     path = require('path'),
     fs = require('fs'),
+    util = require('util'),
     redis = require('redis'),
     redisClient = redis.createClient(config.redisServer.port, config.redisServer.host, config.redisServer.options),
     RedisStore = require('connect-redis')(express),
@@ -17,8 +20,18 @@ var config = require('./config'),
     BasicStrategy = require('passport-http').BasicStrategy,
     passportSocketIo = require("passport.socketio"),
     pluginMgr = require('./server/pluginmgr'),
-    deviceMgr = require('./server/devicemgr');
+    deviceMgr = require('./server/devicemgr'),
+    User = mongoose.model('User');
 
+var dbURI = util.format('mongodb://%s:%s@%s/%s', config.database.username, config.database.password, config.database.host, config.database.db);
+db.connect(dbURI, function (err) {
+  if (err) { 
+    console.log ('ERROR connecting to database: ' + err);
+    process.exit();
+  } else {
+    console.log ('Connected to database');
+  }
+});
 
 var app = module.exports = express();
 
@@ -51,25 +64,33 @@ var redisSessionStore = new RedisStore({ client: redisClient });
 passport.use(new BasicStrategy(
   function(username, password, done) {
     console.log("Attempting to authenticate user %s", username);
-    if (username == 'testuser' && password == 'testpass') {
+    /*if (username == 'testuser' && password == 'testpass') {
       var user = { id:1, firstname:'Test', lastname:'User', username:'testuser' };
       console.log("Authentication successful for %s", username);
       return done(null, user);
     }
     console.log("Authentication failed for %s", username);
-    return done(null, false, { message: 'Invalid username or password.' });    
+    return done(null, false, { message: 'Invalid username or password.' });*/
+    User.findOne({ username: username }, function (err, user) {
+      console.log("Found user %s", user.username);
+      if (err) { console.log("err");return done(err); }
+      if (!user) { console.log("!user");return done(null, false); }
+      if (!user.authenticate(password)) { console.log("!authenticate");return done(null, false); }
+      console.log("other");return done(null, user);
+    });    
   }
 ));
 
 passport.serializeUser(function(user, done) {
-  console.log("Serializing user with id %d", user.id);
-  done(null, user.id);
+  console.log("Serializing user %s", user.username);
+  done(null, user.username);
 });
 
-passport.deserializeUser(function(id, done) {
-  var user = {id:1, firstname:'Test', lastname:'User', username:'testuser'};
-  console.log("Deserializing user [%s]", user);
-  done(null, user);
+passport.deserializeUser(function(username, done) {
+  console.log("Deserializing user [%s]", username);
+  User.findOne({ username: username }, function (err, user) {
+    return done(err, user);
+  });    
 });
 
 socketio.set("authorization", passportSocketIo.authorize({
@@ -137,12 +158,12 @@ pluginMgr.loadPlugins(function() {
  */
 
 // Returns the current session ID for use with non-browser socket.io requests
-app.get('/getSession', passport.authenticate('basic'), function(req, res) {
+app.get('/session', passport.authenticate('basic'), function(req, res) {
   var signedSession = require('cookie-signature').sign(req.sessionID, config.server.sessionSecret);
   res.end(encodeURIComponent('s:' + signedSession));
 });
 
-app.get('/destroySession', passport.authenticate('basic'), function(req, res) {
+app.delete('/session', passport.authenticate('basic'), function(req, res) {
   redisSessionStore.destroy(req.sessionID, function() {
     console.log("Session destroyed [%s]", req.sessionID);
     res.end('ok');
@@ -156,9 +177,15 @@ app.get('/partials/:name', passport.authenticate('basic'), routes.partials);
 // JSON API
 app.get('/api/devices', passport.authenticate('basic'), api.devices);
 
+//app.put('/api/user/:username', api.userPut);
+app.put('/api/user/:username', passport.authenticate('basic'), api.userPut);
+app.get('/api/user/:username', passport.authenticate('basic'), api.userGet);
+app.get('/api/user', passport.authenticate('basic'), api.userGetAll);
+app.delete('/api/user/:username', passport.authenticate('basic'), api.userDelete);
+
 app.get('/proxy/:name', passport.authenticate('basic'), routes.proxy);
 
-// Redirect HTML5 controllers paths to the index (HTML5 history)
+// Redirect HTML5 controllers to the index (HTML5 history)
 app.get('/devices', passport.authenticate('basic'), routes.index);
 app.get('/cameras', passport.authenticate('basic'), routes.index);
 app.get('/admin', passport.authenticate('basic'), routes.index);
