@@ -1,0 +1,27 @@
+!!!
+html(ng-app="houseNode")
+  head
+    meta(name='viewport', content='width=device-width, initial-scale=1.0', charset='utf8')
+    base(href='/')
+    title Sign in
+    link(rel='stylesheet', href='/css/bootstrap.min.css')
+    link(rel='stylesheet', href='/css/login.css')
+
+  body
+    .container
+      form.form-signin(method="post")
+        if message && message.length > 0
+          .alert.alert-danger.alert-dismissable
+            button.close(data-dismiss="alert", aria-hidden="true")
+              &times;
+            = message
+        h2.form-signin-heading Please sign in
+        input.input-block-level.form-control(type="text", name="username", placeholder='Username')
+        input.input-block-level.form-control(type="password", name="password", placeholder="Password")
+        //-label.checkbox
+         //-input(type="checkbox", value="remember-me")
+         //-| Remember me
+        button.btn.btn-lg.btn-primary.btn-block(type="submit") Sign in
+
+    script(src='js/lib/jquery-2.0.3.js')
+    script(src='js/lib/bootstrap.min.js')

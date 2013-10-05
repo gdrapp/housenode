@@ -17,8 +17,10 @@ var config = require('./config'),
     RedisStore = require('connect-redis')(express),
     _ = require('underscore'),
     passport = require('passport'),
+    LocalStrategy = require('passport-local').Strategy,
     BasicStrategy = require('passport-http').BasicStrategy,
     passportSocketIo = require("passport.socketio"),
+    flash = require('connect-flash'),
     pluginMgr = require('./server/pluginmgr'),
     deviceMgr = require('./server/devicemgr'),
     User = mongoose.model('User');
@@ -63,35 +65,67 @@ var redisSessionStore = new RedisStore({ client: redisClient });
 
 passport.use(new BasicStrategy(
   function(username, password, done) {
-    console.log("Attempting to authenticate user %s", username);
-    /*if (username == 'testuser' && password == 'testpass') {
-      var user = { id:1, firstname:'Test', lastname:'User', username:'testuser' };
-      console.log("Authentication successful for %s", username);
-      return done(null, user);
-    }
-    console.log("Authentication failed for %s", username);
-    return done(null, false, { message: 'Invalid username or password.' });*/
+    console.log("Attempting to authenticate user using basic authentication: %s", username);
     User.findOne({ username: username }, function (err, user) {
       console.log("Found user %s", user.username);
-      if (err) { console.log("err");return done(err); }
-      if (!user) { console.log("!user");return done(null, false); }
-      if (!user.authenticate(password)) { console.log("!authenticate");return done(null, false); }
-      console.log("other");return done(null, user);
+      if (err) {
+        console.log('Error while attempting to authenticate user: %s', username);
+        return done(err);
+      }
+      if (!user) {
+        console.log('Username not found while attempting to authenticate user: %s', username);
+        return done(null, false);
+      }
+      if (!user.authenticate(password)) {
+        console.log('Incorrect password supplied for user: %s', username);
+        return done(null, false);
+      }
+      console.log('Successfully authenticated user: %s', username);
+      return done(null, user);
     });    
   }
 ));
 
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+    console.log("Attempting to authenticate user using local authentication: %s", username);
+    User.findOne({ username: username }, function(err, user) {
+      if (err) { 
+        console.log('Error while attempting to authenticate user: %s', username);
+        return done(err); 
+      }
+      if (!user) {
+        console.log('Username not found while attempting to authenticate user: %s', username);
+        return done(null, false, { message: 'Incorrect username or password.' });
+      }
+      if (!user.authenticate(password)) {
+        console.log('Incorrect password supplied for user: %s', username);
+        return done(null, false, { message: 'Incorrect username or password.' });
+      }
+      console.log('Successfully authenticated user: %s', username);
+      return done(null, user);
+    });
+  }
+));
+
 passport.serializeUser(function(user, done) {
-  console.log("Serializing user %s", user.username);
+  console.log("Serializing user: %s", user.username);
   done(null, user.username);
 });
 
 passport.deserializeUser(function(username, done) {
-  console.log("Deserializing user [%s]", username);
-  User.findOne({ username: username }, function (err, user) {
+  console.log("Deserializing user: %s", username);
+  User.findOne({ username: username }, { passwordHash:0, passwordSalt:0, __v:0, _id:0 } , function (err, user) {
     return done(err, user);
   });    
 });
+
+var auth = function(req, res, next) {
+  if (!req.isAuthenticated()) 
+    res.redirect('/login');
+  else 
+    next();
+};
 
 socketio.set("authorization", passportSocketIo.authorize({
   cookieParser: express.cookieParser,
@@ -124,10 +158,12 @@ app.use(express.methodOverride());
 app.use(express.session({ store: redisSessionStore, secret: config.server.sessionSecret, key: 'express.sid' }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(app.router);
-
-// Include static content.  This must be after app.router for security to work on these files!
+app.use(flash());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(app.router);
+// Include private static content.  This must be after app.router for security to work on these files!
+app.use(express.static(path.join(__dirname, 'private')));
+
 
 // Development only
 if (app.get('env') === 'development') {
@@ -157,13 +193,23 @@ pluginMgr.loadPlugins(function() {
  * Routes
  */
 
+// Authentication
+app.get('/login', routes.login);
+app.post('/login',
+  passport.authenticate('local', { successRedirect: '/',
+                                   failureRedirect: '/login',
+                                   failureFlash: true })
+);
+app.get('/loggedin', routes.loggedin); 
+app.all('/logout', routes.logout);
+
 // Returns the current session ID for use with non-browser socket.io requests
-app.get('/session', passport.authenticate('basic'), function(req, res) {
+app.get('/session', auth, function(req, res) {
   var signedSession = require('cookie-signature').sign(req.sessionID, config.server.sessionSecret);
   res.end(encodeURIComponent('s:' + signedSession));
 });
 
-app.delete('/session', passport.authenticate('basic'), function(req, res) {
+app.delete('/session', auth, function(req, res) {
   redisSessionStore.destroy(req.sessionID, function() {
     console.log("Session destroyed [%s]", req.sessionID);
     res.end('ok');
@@ -171,28 +217,34 @@ app.delete('/session', passport.authenticate('basic'), function(req, res) {
 });
 
 // Serve index and view partials
-app.get('/', passport.authenticate('basic'), routes.index);
-app.get('/partials/:name', passport.authenticate('basic'), routes.partials);
+app.get('/', auth, routes.index);
+app.get('/partials/:name', auth, routes.partials);
 
 // JSON API
 app.get('/api/devices', passport.authenticate('basic'), api.devices);
 
 //app.put('/api/user/:username', api.userPut);
-app.put('/api/user/:username', passport.authenticate('basic'), api.userPut);
-app.get('/api/user/:username', passport.authenticate('basic'), api.userGet);
-app.get('/api/user', passport.authenticate('basic'), api.userGetAll);
-app.delete('/api/user/:username', passport.authenticate('basic'), api.userDelete);
+app.put('/api/user/:username', auth, api.userPut);
+app.get('/api/user/:username', auth, api.userGet);
+app.get('/api/user', auth, api.userGetAll);
+app.delete('/api/user/:username', auth, api.userDelete);
 
-app.get('/proxy/:name', passport.authenticate('basic'), routes.proxy);
+app.get('/proxy/:name', auth, routes.proxy);
+app.get('/mjpegproxy/:deviceId/:pathType', auth, routes.mjpegcamProxy);
 
 // Redirect HTML5 controllers to the index (HTML5 history)
-app.get('/devices', passport.authenticate('basic'), routes.index);
-app.get('/cameras', passport.authenticate('basic'), routes.index);
-app.get('/admin', passport.authenticate('basic'), routes.index);
-app.get('/about', passport.authenticate('basic'), routes.index);
+app.get('/devices', auth, routes.index);
+app.get('/cameras', auth, routes.index);
+app.get('/admin', auth, routes.index);
+app.get('/about', auth, routes.index);
 
 // Required to secure static content
-app.all('*', passport.authenticate('basic'));
+app.all('/css/*', auth);
+app.all('/js/*', auth);
+app.all('/bower_components/*', auth);
+
+// Redirect HTML5 controllers to the index (HTML5 history)
+//app.all('*', auth, routes.index);
 
 // Socket.io Communication
 socketio.sockets.on('connection', function(socket) {

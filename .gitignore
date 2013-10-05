@@ -1,7 +1,7 @@
 # HouseNode
 config.json
 devices.json
-public/bower_components
+private/bower_components
 *.pem
 *.der
 *.p12
