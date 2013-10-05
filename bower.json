@@ -1,7 +1,7 @@
 {
   "name": "housenode",
   "version": "0.1.0",
-  "main": "public/css/app.css",
+  "main": "private/css/app.css",
   "ignore": [
     ".jshintrc",
     "**/*.txt"
