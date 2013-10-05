@@ -39,7 +39,7 @@ exports.initPlugins = function (cb) {
 				console.info("Initializing instance %s of %s plugin with config %s", instance, pluginModule.info.friendlyName, JSON.stringify(instanceConfig));
 				plugin.init(instance, instanceConfig.options);				
 			} else {
-				console.info("Instance %s of %s plugin is not enabled and will not be loaded", instance, pluginModule.info.friendlyName);
+				console.info("Instance %s of %s plugin is not enabled and will not be initialized", instance, pluginModule.info.friendlyName);
 			}
 		}
 	}

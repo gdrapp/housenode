@@ -20,7 +20,6 @@ exports.init = function (socketio, cb) {
     redisClient.sadd("devices", devicePrefix+id);
     redisClient.hmset(devicePrefix+id, devices.devices[id]);
     redisClient.hmset(devicePrefix+id, {id: id});
-
   }
 
   cb();
@@ -41,6 +40,15 @@ exports.devices = function (cb) {
 
       cb(devicesArray);
     });
+  });
+};
+
+exports.device = function (id, cb) {
+  redisClient.hgetall(devicePrefix+id, function(err, device) {
+    if (err || !device)
+      cb(null);
+    else
+      cb(device);
   });
 };
 
